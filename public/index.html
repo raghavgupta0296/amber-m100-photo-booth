@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#111827">
+    <title>Wedding Photo Booth</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="booth" aria-label="Wedding photo booth">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Wedding Photo Booth</p>
+            <h1 id="appTitle">Take a photo for the print table</h1>
+          </div>
+          <span class="status-pill" id="connectionStatus">Ready</span>
+        </header>
+
+        <section class="camera-panel" id="captureView">
+          <div class="camera-frame">
+            <video id="cameraVideo" autoplay playsinline muted></video>
+            <canvas id="previewCanvas" class="preview-canvas" width="1800" height="1200"></canvas>
+            <div class="camera-placeholder" id="cameraPlaceholder">
+              <strong>Camera is waiting</strong>
+              <span>Tap Start Camera when you are ready.</span>
+            </div>
+          </div>
+
+          <div class="control-grid">
+            <label class="field">
+              <span>Name</span>
+              <input id="guestName" maxlength="80" autocomplete="name" placeholder="Optional">
+            </label>
+
+            <div class="field">
+              <span>Print style</span>
+              <div class="segmented" role="radiogroup" aria-label="Print style">
+                <button class="segment active" type="button" data-layout="single_4x6" aria-pressed="true">4x6</button>
+                <button class="segment" type="button" data-layout="strip" aria-pressed="false">Strip</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="strip-tray" id="stripTray" hidden></div>
+
+          <div class="actions">
+            <button class="secondary" id="startCameraButton" type="button">Start Camera</button>
+            <button class="primary" id="captureButton" type="button" disabled>Take Photo</button>
+            <button class="secondary" id="retakeButton" type="button" hidden>Retake</button>
+            <button class="primary" id="submitButton" type="button" hidden>Print This</button>
+          </div>
+        </section>
+
+        <section class="done-panel" id="doneView" hidden>
+          <div class="confirmation">
+            <div class="print-status" role="status" aria-live="polite">
+              <h2 id="doneTitle">Sending your photo.</h2>
+              <p id="doneStatus">Creating your print job.</p>
+            </div>
+            <img id="doneImage" alt="Submitted print preview">
+            <button class="primary" id="newPhotoButton" type="button">Take Another</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

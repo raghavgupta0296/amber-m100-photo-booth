@@ -1,0 +1,15 @@
+{
+  "name": "amber-m100-wedding-photo-booth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hosted wedding photo booth web app and local print station for the Amber/Liene M100 photo printer.",
+  "scripts": {
+    "start": "node src/server.js",
+    "print-station": "node scripts/print-station.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,279 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f7f4ef;
+  color: #172033;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    linear-gradient(135deg, rgba(72, 108, 106, 0.16), transparent 34%),
+    linear-gradient(315deg, rgba(191, 80, 68, 0.13), transparent 42%),
+    #f7f4ef;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.app-shell {
+  display: grid;
+  min-height: 100svh;
+  padding: 16px;
+  place-items: center;
+}
+
+.booth {
+  width: min(100%, 980px);
+}
+
+.topbar {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.eyebrow {
+  color: #486c6a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+h1,
+h2 {
+  color: #111827;
+  font-size: clamp(1.45rem, 4vw, 2.6rem);
+  line-height: 1.02;
+  margin: 0;
+}
+
+.status-pill {
+  background: #fffdf8;
+  border: 1px solid rgba(23, 32, 51, 0.12);
+  border-radius: 999px;
+  color: #486c6a;
+  flex: 0 0 auto;
+  font-size: 0.82rem;
+  font-weight: 800;
+  padding: 8px 12px;
+}
+
+.camera-panel,
+.done-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.camera-frame {
+  aspect-ratio: 3 / 2;
+  background: #121826;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  border-radius: 8px;
+  box-shadow: 0 22px 50px rgba(23, 32, 51, 0.18);
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+video,
+.preview-canvas {
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.preview-canvas {
+  background: #fff;
+  display: none;
+}
+
+.camera-placeholder {
+  align-items: center;
+  color: #f9fafb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: absolute;
+  text-align: center;
+}
+
+.camera-placeholder span {
+  color: #d1d5db;
+}
+
+.control-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field span {
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+input {
+  background: #fffdf8;
+  border: 1px solid rgba(23, 32, 51, 0.15);
+  border-radius: 8px;
+  color: #172033;
+  min-height: 48px;
+  padding: 0 13px;
+  width: 100%;
+}
+
+.segmented {
+  background: rgba(255, 253, 248, 0.72);
+  border: 1px solid rgba(23, 32, 51, 0.12);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, 1fr);
+  min-height: 48px;
+  padding: 4px;
+}
+
+.segment {
+  background: transparent;
+  border-radius: 6px;
+  color: #334155;
+  font-weight: 800;
+}
+
+.segment.active {
+  background: #bf5044;
+  color: #fff;
+}
+
+.strip-tray {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.strip-thumb {
+  aspect-ratio: 3 / 2;
+  background: #fffdf8;
+  border: 2px solid rgba(72, 108, 106, 0.25);
+  border-radius: 8px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.primary,
+.secondary {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 16px;
+  text-decoration: none;
+}
+
+.primary {
+  background: #111827;
+  color: #fff;
+}
+
+.secondary {
+  background: #fffdf8;
+  border: 1px solid rgba(17, 24, 39, 0.14);
+  color: #172033;
+}
+
+.confirmation {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  text-align: center;
+}
+
+.print-status {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  max-width: 680px;
+}
+
+.print-status p {
+  color: #334155;
+  font-size: 1.04rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.confirmation img {
+  aspect-ratio: 3 / 2;
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(23, 32, 51, 0.18);
+  object-fit: cover;
+  width: min(100%, 720px);
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    padding: 12px;
+    place-items: start center;
+  }
+
+  .topbar {
+    align-items: start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .control-grid,
+  .actions {
+    grid-template-columns: 1fr;
+  }
+
+  .camera-frame {
+    aspect-ratio: 2 / 3;
+  }
+}

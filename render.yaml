@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: amber-m100-photo-booth
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: PRINT_STATION_TOKEN
+        sync: false
