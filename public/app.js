@@ -15,13 +15,16 @@ const elements = {
   guestName: document.querySelector('#guestName'),
   stripTray: document.querySelector('#stripTray'),
   photoInput: document.querySelector('#photoInput'),
-  zoomRange: document.querySelector('#zoomRange'),
-  cropTools: document.querySelector('#cropTools'),
-  choosePhotoButton: document.querySelector('#choosePhotoButton'),
-  fallbackCameraButton: document.querySelector('#fallbackCameraButton'),
   retakeButton: document.querySelector('#retakeButton'),
   acceptButton: document.querySelector('#acceptButton'),
   submitButton: document.querySelector('#submitButton'),
+  confirmDialog: document.querySelector('#confirmDialog'),
+  cancelPrintButton: document.querySelector('#cancelPrintButton'),
+  confirmPrintButton: document.querySelector('#confirmPrintButton'),
+  captureDialog: document.querySelector('#captureDialog'),
+  nativeCameraButton: document.querySelector('#nativeCameraButton'),
+  inAppCameraButton: document.querySelector('#inAppCameraButton'),
+  cancelCaptureButton: document.querySelector('#cancelCaptureButton'),
   doneTitle: document.querySelector('#doneTitle'),
   doneImage: document.querySelector('#doneImage'),
   doneStatus: document.querySelector('#doneStatus'),
@@ -55,7 +58,9 @@ const state = {
     startY: 0,
     startOffsetX: 0,
     startOffsetY: 0
-  }
+  },
+  pointers: new Map(),
+  pinch: null
 };
 
 function setStatus(message) {
@@ -73,9 +78,6 @@ function setMode(mode) {
   elements.cropImage.style.display = isAdjusting ? 'block' : 'none';
   elements.cameraVideo.style.display = isCamera ? 'block' : 'none';
   elements.previewCanvas.style.display = isPreview ? 'block' : 'none';
-  elements.cropTools.hidden = !isAdjusting;
-  elements.choosePhotoButton.hidden = isAdjusting || isPreview || isCamera;
-  elements.fallbackCameraButton.hidden = isNativeCaptureAvailable() || !isCameraFallbackAvailable() || isAdjusting || isPreview || isCamera;
   elements.retakeButton.hidden = isEmpty || isCamera;
   elements.acceptButton.hidden = !isAdjusting && !isCamera;
   elements.submitButton.hidden = !isPreview;
@@ -145,6 +147,9 @@ function stopCamera() {
 
 function resetCrop() {
   state.activeImage = null;
+  state.pointers.clear();
+  state.pinch = null;
+  state.drag.active = false;
   state.crop = {
     scale: 1,
     minScale: 1,
@@ -155,13 +160,14 @@ function resetCrop() {
     stageWidth: 0,
     stageHeight: 0
   };
-  elements.zoomRange.value = '1';
 }
 
 function resetCapture() {
   stopCamera();
   clearObjectUrl();
   resetCrop();
+  closePrintConfirmation();
+  closeCaptureDialog();
   elements.photoInput.value = '';
   setMode('empty');
   const nextShot = state.layout === 'strip' ? ` ${state.captures.length + 1}/${STRIP_SHOTS}` : '';
@@ -213,6 +219,22 @@ function applyCropTransform() {
   elements.cropImage.style.transform = `translate(${crop.offsetX}px, ${crop.offsetY}px) scale(${crop.scale})`;
 }
 
+function setCropScale(nextScale, anchorX = state.crop.stageWidth / 2, anchorY = state.crop.stageHeight / 2) {
+  const crop = state.crop;
+  const oldScale = crop.scale;
+  const scale = clamp(nextScale, crop.minScale, crop.minScale * 4);
+  if (!oldScale || oldScale === scale) {
+    crop.scale = scale;
+    applyCropTransform();
+    return;
+  }
+
+  crop.offsetX = anchorX - crop.stageWidth / 2 - ((anchorX - crop.stageWidth / 2 - crop.offsetX) * scale) / oldScale;
+  crop.offsetY = anchorY - crop.stageHeight / 2 - ((anchorY - crop.stageHeight / 2 - crop.offsetY) * scale) / oldScale;
+  crop.scale = scale;
+  applyCropTransform();
+}
+
 function initializeCropForImage(image) {
   const stageRect = elements.cropStage.getBoundingClientRect();
   const stageWidth = Math.max(1, stageRect.width);
@@ -229,10 +251,6 @@ function initializeCropForImage(image) {
     stageWidth,
     stageHeight
   };
-  elements.zoomRange.min = String(minScale);
-  elements.zoomRange.max = String(minScale * 3);
-  elements.zoomRange.step = String(Math.max(0.01, minScale / 100));
-  elements.zoomRange.value = String(minScale);
   applyCropTransform();
 }
 
@@ -250,7 +268,7 @@ async function showCropFromFile(file) {
     state.activeImage = elements.cropImage;
     initializeCropForImage(elements.cropImage);
     setMode('adjusting');
-    setStatus('Adjust crop');
+    setStatus('Drag or pinch to adjust');
   };
   elements.cropImage.onerror = () => {
     setStatus('Photo could not load');
@@ -429,8 +447,63 @@ async function startFallbackCamera() {
   }
 }
 
+function openCapture() {
+  if (state.mode !== 'empty') {
+    return;
+  }
+
+  elements.captureDialog.hidden = false;
+  elements.nativeCameraButton.hidden = !isNativeCaptureAvailable();
+  elements.inAppCameraButton.hidden = !isCameraFallbackAvailable();
+  if (isNativeCaptureAvailable()) {
+    elements.nativeCameraButton.focus();
+  } else if (isCameraFallbackAvailable()) {
+    elements.inAppCameraButton.focus();
+  } else {
+    closeCaptureDialog();
+    setStatus('Camera unavailable');
+  }
+}
+
+function closeCaptureDialog() {
+  elements.captureDialog.hidden = true;
+}
+
+function openNativeCapture() {
+  if (isNativeCaptureAvailable()) {
+    closeCaptureDialog();
+    elements.photoInput.click();
+    return;
+  }
+
+  setStatus('Phone camera unavailable');
+}
+
+function openInAppCapture() {
+  if (isCameraFallbackAvailable()) {
+    closeCaptureDialog();
+    startFallbackCamera();
+    return;
+  }
+
+  setStatus('In-app camera unavailable');
+}
+
+function openPrintConfirmation() {
+  elements.confirmDialog.hidden = false;
+  elements.confirmPrintButton.disabled = false;
+  elements.cancelPrintButton.disabled = false;
+  elements.confirmPrintButton.focus();
+}
+
+function closePrintConfirmation() {
+  elements.confirmDialog.hidden = true;
+}
+
 async function submitPrint() {
   elements.submitButton.disabled = true;
+  elements.confirmPrintButton.disabled = true;
+  elements.cancelPrintButton.disabled = true;
   setStatus('Sending');
   try {
     const response = await fetch('/api/print-jobs', {
@@ -449,6 +522,7 @@ async function submitPrint() {
       throw new Error(body.error || 'Could not send print job.');
     }
 
+    closePrintConfirmation();
     elements.captureView.hidden = true;
     elements.doneView.hidden = false;
     elements.appTitle.textContent = 'Print status';
@@ -462,6 +536,10 @@ async function submitPrint() {
     alert(error.message);
   } finally {
     elements.submitButton.disabled = false;
+    if (!elements.confirmDialog.hidden) {
+      elements.confirmPrintButton.disabled = false;
+      elements.cancelPrintButton.disabled = false;
+    }
   }
 }
 
@@ -513,23 +591,19 @@ elements.layoutButtons.forEach((button) => {
   button.addEventListener('click', () => setLayout(button.dataset.layout));
 });
 
-elements.choosePhotoButton.addEventListener('click', () => {
-  elements.photoInput.click();
-});
-
 elements.photoInput.addEventListener('change', () => {
   showCropFromFile(elements.photoInput.files?.[0]);
 });
 
-elements.zoomRange.addEventListener('input', () => {
-  state.crop.scale = Number(elements.zoomRange.value);
-  applyCropTransform();
-});
+elements.cropStage.addEventListener('click', openCapture);
 
 elements.cropStage.addEventListener('pointerdown', (event) => {
   if (state.mode !== 'adjusting') {
     return;
   }
+
+  event.preventDefault();
+  state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
   state.drag = {
     active: true,
     pointerId: event.pointerId,
@@ -539,31 +613,92 @@ elements.cropStage.addEventListener('pointerdown', (event) => {
     startOffsetY: state.crop.offsetY
   };
   elements.cropStage.setPointerCapture(event.pointerId);
+
+  if (state.pointers.size === 2) {
+    const points = [...state.pointers.values()];
+    const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+    state.pinch = { distance, scale: state.crop.scale };
+    state.drag.active = false;
+  }
 });
 
 elements.cropStage.addEventListener('pointermove', (event) => {
-  if (!state.drag.active || state.drag.pointerId !== event.pointerId) {
+  if (state.mode !== 'adjusting' || !state.pointers.has(event.pointerId)) {
     return;
   }
-  state.crop.offsetX = state.drag.startOffsetX + event.clientX - state.drag.startX;
-  state.crop.offsetY = state.drag.startOffsetY + event.clientY - state.drag.startY;
-  applyCropTransform();
+
+  event.preventDefault();
+  state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+  if (state.pointers.size === 2 && state.pinch) {
+    const rect = elements.cropStage.getBoundingClientRect();
+    const points = [...state.pointers.values()];
+    const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+    const centerX = (points[0].x + points[1].x) / 2 - rect.left;
+    const centerY = (points[0].y + points[1].y) / 2 - rect.top;
+    setCropScale(state.pinch.scale * (distance / state.pinch.distance), centerX, centerY);
+    return;
+  }
+
+  if (state.drag.active && state.drag.pointerId === event.pointerId) {
+    state.crop.offsetX = state.drag.startOffsetX + event.clientX - state.drag.startX;
+    state.crop.offsetY = state.drag.startOffsetY + event.clientY - state.drag.startY;
+    applyCropTransform();
+  }
 });
 
 function endDrag(event) {
-  if (!state.drag.active || state.drag.pointerId !== event.pointerId) {
-    return;
+  state.pointers.delete(event.pointerId);
+  state.pinch = null;
+  if (state.pointers.size === 1) {
+    const [remainingId, point] = [...state.pointers.entries()][0];
+    state.drag = {
+      active: true,
+      pointerId: remainingId,
+      startX: point.x,
+      startY: point.y,
+      startOffsetX: state.crop.offsetX,
+      startOffsetY: state.crop.offsetY
+    };
+  } else if (state.drag.pointerId === event.pointerId) {
+    state.drag.active = false;
   }
-  state.drag.active = false;
-  elements.cropStage.releasePointerCapture(event.pointerId);
+
+  if (elements.cropStage.hasPointerCapture(event.pointerId)) {
+    elements.cropStage.releasePointerCapture(event.pointerId);
+  }
 }
 
 elements.cropStage.addEventListener('pointerup', endDrag);
 elements.cropStage.addEventListener('pointercancel', endDrag);
-elements.fallbackCameraButton.addEventListener('click', startFallbackCamera);
+elements.cropStage.addEventListener('wheel', (event) => {
+  if (state.mode !== 'adjusting') {
+    return;
+  }
+
+  event.preventDefault();
+  const rect = elements.cropStage.getBoundingClientRect();
+  const factor = event.deltaY > 0 ? 0.92 : 1.08;
+  setCropScale(state.crop.scale * factor, event.clientX - rect.left, event.clientY - rect.top);
+}, { passive: false });
+
 elements.acceptButton.addEventListener('click', acceptCrop);
 elements.retakeButton.addEventListener('click', retake);
-elements.submitButton.addEventListener('click', submitPrint);
+elements.submitButton.addEventListener('click', openPrintConfirmation);
+elements.cancelPrintButton.addEventListener('click', closePrintConfirmation);
+elements.confirmPrintButton.addEventListener('click', submitPrint);
+elements.nativeCameraButton.addEventListener('click', openNativeCapture);
+elements.inAppCameraButton.addEventListener('click', openInAppCapture);
+elements.cancelCaptureButton.addEventListener('click', closeCaptureDialog);
+elements.confirmDialog.addEventListener('click', (event) => {
+  if (event.target === elements.confirmDialog) {
+    closePrintConfirmation();
+  }
+});
+elements.captureDialog.addEventListener('click', (event) => {
+  if (event.target === elements.captureDialog) {
+    closeCaptureDialog();
+  }
+});
 elements.newPhotoButton.addEventListener('click', () => {
   elements.doneView.hidden = true;
   elements.captureView.hidden = false;
