@@ -23,6 +23,7 @@ const elements = {
   confirmPrintButton: document.querySelector('#confirmPrintButton'),
   captureDialog: document.querySelector('#captureDialog'),
   nativeCameraButton: document.querySelector('#nativeCameraButton'),
+  albumButton: document.querySelector('#albumButton'),
   inAppCameraButton: document.querySelector('#inAppCameraButton'),
   cancelCaptureButton: document.querySelector('#cancelCaptureButton'),
   doneTitle: document.querySelector('#doneTitle'),
@@ -454,6 +455,7 @@ function openCapture() {
 
   elements.captureDialog.hidden = false;
   elements.nativeCameraButton.hidden = !isNativeCaptureAvailable();
+  elements.albumButton.hidden = !isNativeCaptureAvailable();
   elements.inAppCameraButton.hidden = !isCameraFallbackAvailable();
   if (isNativeCaptureAvailable()) {
     elements.nativeCameraButton.focus();
@@ -472,11 +474,25 @@ function closeCaptureDialog() {
 function openNativeCapture() {
   if (isNativeCaptureAvailable()) {
     closeCaptureDialog();
+    elements.photoInput.setAttribute('capture', 'environment');
+    elements.photoInput.value = '';
     elements.photoInput.click();
     return;
   }
 
   setStatus('Phone camera unavailable');
+}
+
+function openAlbumPicker() {
+  if (isNativeCaptureAvailable()) {
+    closeCaptureDialog();
+    elements.photoInput.removeAttribute('capture');
+    elements.photoInput.value = '';
+    elements.photoInput.click();
+    return;
+  }
+
+  setStatus('Album unavailable');
 }
 
 function openInAppCapture() {
@@ -687,6 +703,7 @@ elements.submitButton.addEventListener('click', openPrintConfirmation);
 elements.cancelPrintButton.addEventListener('click', closePrintConfirmation);
 elements.confirmPrintButton.addEventListener('click', submitPrint);
 elements.nativeCameraButton.addEventListener('click', openNativeCapture);
+elements.albumButton.addEventListener('click', openAlbumPicker);
 elements.inAppCameraButton.addEventListener('click', openInAppCapture);
 elements.cancelCaptureButton.addEventListener('click', closeCaptureDialog);
 elements.confirmDialog.addEventListener('click', (event) => {
